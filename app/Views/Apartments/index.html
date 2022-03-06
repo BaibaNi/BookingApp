@@ -1,0 +1,46 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div>
+    <p>
+        <a href="/">Back</a>
+        {% if session.userid is defined %}
+            | <a href="/apartments/create">Add apartment for booking</a>
+        {% endif %}
+    </p>
+</div>
+
+<p>AVAILABLE APARTMENTS</p>
+<div class="row row-cols-1 row-cols-md-3 g-4">
+    {% for apartment in apartments %}
+    <div class="card">
+        <img src="https://imagesvc.meredithcorp.io/v3/mm/image?url=https%3A%2F%2Fstatic.onecms.io%2Fwp-content%2Fuploads%2Fsites%2F24%2F2020%2F06%2F02%2Fbeachside-bungalow-plan-sl-1117_0-2000.jpg&w=400&h=268&c=sc&poi=face&q=60"
+             class="img-fluid rounded-start" alt="house" >
+        <div class="card-body">
+            <h5 class="card-title">
+                <a href="/apartments/{{ apartment.id }}">{{ apartment.title }}</a>
+            </h5>
+            <div class="card-text">
+                <p class="description">Address: {{ apartment.address }}</p>
+                <p class="description">Description: {{ apartment.description }}</p>
+                <p class="description">Available from: {{ apartment.availableFrom|date('d-m-Y') }}</p>
+                <p class="description">Available until: {{ apartment.availableUntil|date('d-m-Y') }}</p>
+            </div>
+
+            <div>
+                {% if session.userid == apartment.userId %}
+                    <form method="post" action="/apartments/{{ apartment.id }}/delete">
+                        <button type="submit" onclick="return confirm('Are you sure you want to delete this item?')"
+                                class="btn btn-primary">Delete</button>
+                    </form>
+                    <a href="/apartments/{{ apartment.id }}/edit">Edit</a> |
+                    <a href="/apartments/{{ apartment.id }}">Reserve</a> |
+                    <a href="/apartments/{{ apartment.id }}">Give review</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% endfor %}
+</div>
+{% endblock %}

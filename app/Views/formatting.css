@@ -1,0 +1,61 @@
+h1{
+    font-family: Century Gothic, sans-serif;
+    color: purple;
+}
+
+p{
+    font-family: Century Gothic, sans-serif;
+}
+
+.description{
+    font-family: Century Gothic, sans-serif;
+    font-size: 12px;
+    color: grey;
+    line-height: 12px;
+}
+
+body{
+    font-family: Century Gothic, sans-serif;
+    margin: 1% 2% 1% 2%;
+}
+
+.small_error{
+    font-size: 8px;
+    color: crimson;
+}
+
+.btn.btn-primary{
+    background-color: darkseagreen;
+    border-color: darkseagreen;
+    padding: 0 2% 0 2%;
+}
+
+.container{
+    padding: 0 1% 0 1%;
+    margin: auto;
+}
+
+.col{
+    background-color: lavender;
+    padding: 1% 1% 1% 1%;
+    margin: 0 1% 0 1%;
+}
+
+.card{
+    margin: 4% 4% 4% 4%;
+}
+
+.card-title{
+    color: purple;
+}
+
+.card-body{
+    background-color: lavender;
+    padding: 2% 4% 2% 4%;
+    margin: 2% 2% 2% 2%;
+}
+
+
+.form-check.form-check-inline{
+    font-size: 12px;
+}

@@ -1,0 +1,63 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div>
+    <p>
+        <a href="/">Back</a> |
+        <a href="/articles">Articles</a>
+    </p>
+</div>
+
+<form method="post" action="/users">
+
+    <div>
+        <label for="name">Name:</label>
+        <input type="text" id="name" name="name"/>
+        {% if errors.name %}
+            <p class="small_error">{{ errors.name[0] }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <label for="surname">Surname:</label>
+        <input type="text" id="surname" name="surname" />
+        {% if errors.surname %}
+            <p class="small_error">{{ errors.surname[0] }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <label for="birthday">Birthday:</label>
+        <input type="date" id="birthday" name="birthday" />
+        {% if errors.birthday %}
+            <p class="small_error">{{ errors.birthday[0] }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <label for="email">Email:</label>
+        <input type="text" id="email" name="email" />
+        {% if errors.email %}
+            <p class="small_error">{{ errors.email[0] }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <label for="password">Password:</label>
+        <input type="text" id="password" name="password" />
+        {% if errors.password %}
+            <p class="small_error">{{ errors.password[0] }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <label for="repeatPassword">Repeat password:</label>
+        <input type="text" id="repeatPassword" name="repeatPassword" />
+        {% if errors.repeatPassword %}
+            <p class="small_error">{{ errors.repeatPassword[0] }}</p>
+        {% endif %}
+    </div>
+
+    <div>
+        <button type="submit">Register</button>
+    </div>
+
+</form>
+
+{% endblock %}

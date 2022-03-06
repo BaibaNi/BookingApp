@@ -1,1 +1,24 @@
-All users
+{% extends "layout.html" %}
+
+{% block content %}
+
+{% if session.userid is defined %}
+<div>
+    <p>
+        <a href="/">Back</a> |
+        OTHER USERS AND THEIR REVIEWS?
+    </p>
+</div>
+
+{% else %}
+<div>
+    <p>
+        <a href="/">Register</a> |
+        <a href="/">Log in</a>
+    </p>
+</div>
+{% endif %}
+
+{% endblock %}
+
+

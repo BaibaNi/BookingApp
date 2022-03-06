@@ -1,0 +1,35 @@
+{% extends "layout.html" %}
+
+{% block content %}
+
+<div>
+    <p>
+        <a href="/users/register">Register</a> |
+        <a href="/">Back to main page</a>
+    </p>
+</div>
+
+<form method="post" action="/users/login" class="row g-3 needs-validation" novalidate>
+    <div class="col-md-4">
+        <label for="email" class="form-label">Email:</label>
+        <input type="text" id="email" name="email" class="form-control" required/>
+        <div class="valid-feedback">
+            {% if errors.email %}
+                <p class="small_error">{{ errors.email[0] }}</p>
+            {% endif %}
+        </div>
+    </div>
+    <div>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password"/>
+        {% if errors.password %}
+            <p class="small_error">{{ errors.password[0] }}</p>
+        {% endif %}
+    </div>
+    <div>
+        <button type="submit" class="button_box">Log in</button>
+    </div>
+
+</form>
+
+{% endblock %}

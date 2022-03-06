@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div>
+    <p><a href="/apartments/{{ apartment.id }}">Back</a></p>
+</div>
+
+{% if session.userid is defined %}
+<div class="container">
+    <p>EDIT INFORMATION ABOUT APARTMENT: <b>{{ apartment.title}}</b></p>
+    <form method="post" action="/apartments/{{ apartment.id }}" class="col">
+        <div>
+            <label for="title" class="form-label">Title:</label>
+            <input type="text" id="title" name="title" value="{{ inputs.title }}" class="form-control"/>
+            {% if errors.title %}
+                <p class="small_error">{{ errors.title[0] }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <label for="address" class="form-label">Address:</label>
+            <input type="text" id="address" name="address" value="{{ inputs.address }}" class="form-control"/>
+            {% if errors.address %}
+                <p class="small_error">{{ errors.address[0] }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <label for="description" class="form-label">Description:</label>
+            <textarea id="description" name="description" class="form-control">{{ inputs.description }}</textarea>
+            {% if errors.description %}
+                <p class="small_error">{{ errors.description[0] }}</p>
+            {% endif %}
+        </div>
+        <p>Available from: {{ apartment.availableFrom|date('d-m-Y') }}</p>
+        <p>Available until: {{ apartment.availableUntil|date('d-m-Y') }}</p>
+
+        <button type="submit" class="btn btn-primary">Submit changes</button>
+    </form>
+</div>
+{% endif %}
+
+{% endblock %}
