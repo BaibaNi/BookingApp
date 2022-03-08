@@ -10,10 +10,11 @@ class Apartment
     private string $availableUntil;
     private ?int $id;
     private int $userId;
+    private ?float $avgRating;
 
     public function __construct(string $title, string $address, string $description,
                                 ?string $availableFrom, string $availableUntil,
-                                ?int $id, int $userId)
+                                ?int $id, int $userId, ?float $avgRating)
     {
         $this->title = $title;
         $this->address = $address;
@@ -22,6 +23,7 @@ class Apartment
         $this->availableUntil = $availableUntil;
         $this->id = $id;
         $this->userId = $userId;
+        $this->avgRating = $avgRating;
     }
 
     public function getTitle(): string
@@ -57,5 +59,10 @@ class Apartment
     public function getUserId(): int
     {
         return $this->userId;
+    }
+
+    public function getAvgRating(): ?float
+    {
+        return $this->avgRating;
     }
 }

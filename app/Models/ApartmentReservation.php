@@ -9,7 +9,7 @@ class ApartmentReservation
     private int $userId;
     private int $apartmentId;
 
-    public function __construct(string $reservedFrom, string $reservedUntil, ?int $id, int $userId, int $apartmentId, )
+    public function __construct(string $reservedFrom, string $reservedUntil, ?int $id, int $userId, int $apartmentId)
     {
         $this->reservedFrom = $reservedFrom;
         $this->reservedUntil = $reservedUntil;

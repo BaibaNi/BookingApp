@@ -88,6 +88,14 @@ class UsersController extends Database
 
         $createdApartments = [];
         foreach ($apartmentInfo as $apartment){
+
+            $apartmentAvgRatingQuery = Database::connection()
+                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
+            $apartmentAvgRatingQuery->bindValue(1, $apartment['id']);
+            $apartmentAvgRating = $apartmentAvgRatingQuery
+                ->executeQuery()
+                ->fetchAssociative();
+
             $createdApartments[] = new Apartment(
                  $apartment['title'],
                  $apartment['address'],
@@ -95,7 +103,9 @@ class UsersController extends Database
                  $apartment['available_from'],
                  $apartment['available_until'],
                  $apartment['id'],
-                 $apartment['user_id']
+                 $apartment['user_id'],
+                (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
+
             );
         }
 
@@ -104,12 +114,19 @@ class UsersController extends Database
             ->prepare('SELECT * from apartment_reservations
     join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.user_id = ?');
         $reservedApartmentsQuery->bindValue(1, $_SESSION['userid']);
-        $reservationsInfo = $reservedApartmentsQuery
+        $reservedApartmentsInfo = $reservedApartmentsQuery
             ->executeQuery()
             ->fetchAllAssociative();
 
         $reservedApartments = [];
-        foreach ($reservationsInfo as $reservation){
+        foreach ($reservedApartmentsInfo as $reservation){
+
+            $apartmentAvgRatingQuery = Database::connection()
+                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
+            $apartmentAvgRatingQuery->bindValue(1, $reservation['id']);
+            $apartmentAvgRating = $apartmentAvgRatingQuery
+                ->executeQuery()
+                ->fetchAssociative();
 
             $reservedApartments[] = new Apartment(
                 $reservation['title'],
@@ -118,7 +135,28 @@ class UsersController extends Database
                 $reservation['reserved_from'],
                 $reservation['reserved_until'],
                 $reservation['id'],
-                $reservation['user_id']
+                $reservation['user_id'],
+                (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
+            );
+        }
+
+
+        $reservationsQuery = Database::connection()
+            ->prepare('SELECT * from apartment_reservations where user_id = ?');
+        $reservationsQuery->bindValue(1, $vars['id']);
+        $reservationsInfo = $reservationsQuery
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        $reservations =[];
+        foreach ($reservationsInfo as $reservation) {
+
+            $reservations[] = new ApartmentReservation(
+                $reservation['reserved_from'],
+                $reservation['reserved_until'],
+                $reservation['id'],
+                $reservation['user_id'],
+                $reservation['apartment_id']
             );
         }
 
@@ -126,7 +164,8 @@ class UsersController extends Database
         return new View('Users/show', [
             'user' => $user,
             'createdApartments' => $createdApartments,
-            'reservedApartments' => $reservedApartments
+            'reservedApartments' => $reservedApartments,
+            'reservations' => $reservations
         ]);
     }
 
@@ -168,7 +207,7 @@ class UsersController extends Database
                         'birthday' => $_POST['birthday'],
                     ]);
 
-                return new Redirect('/users');
+                return new Redirect('/');
             }
         } catch(RegistrationValidationException $exception){
             $_SESSION['errors'] = $validator->getErrors();

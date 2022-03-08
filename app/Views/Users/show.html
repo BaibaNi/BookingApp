@@ -11,62 +11,83 @@
 
 
 {% if session.userid is defined %}
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title">{{ user.name }} {{ user.surname }}</h5>
-            <div class="card-text">
-                <p class="description">Birthday: {{ user.birthday }}</p>
-                <p class="description">Email: {{ user.email }}</p>
-                <p class="description">Profile created: {{ user.createdAt|date('d-m-Y') }}</p>
+    <div class="card mb-3">
+        <div class="row g-0">
+            <div class="col-md-4" style="width: 15%">
+                <img src="https://www.seekpng.com/png/detail/143-1435868_headshot-silhouette-person-placeholder.png"
+                     class="img-fluid rounded-start" alt="user_placeholder" >
             </div>
-        </div>
-    </div>
-
-
-    <div class="container">
-        <div class="row">
-            <div class="col">
-                <p>MY APARTMENTS</p>
-                <div class="card">
-                    {% for createdApartment in createdApartments %}
-                    <div class="card-body">
-                        <h5 class="card-title">{{ createdApartment.title }}</h5>
-                        <div class="card-text">
-                            <p class="description">Address: {{ createdApartment.address }}</p>
-                            <p class="description">Description: {{ createdApartment.description }}</p>
-                            <p class="description">Reserved from: {{ createdApartment.availableFrom|date('d-m-Y') }}</p>
-                            <p class="description">Reserved until: {{ createdApartment.availableUntil|date('d-m-Y') }}</p>
-                        </div>
-                        <form method="post" action="/apartments/{{ createdApartment.id }}/delete">
-                            <button type="submit" onclick="return confirm('Are you sure you want to delete this item?')" class="btn btn-primary">Delete</button>
-                        </form>
-                        <p>
-                            <a href="/apartments/{{ createdApartment.id }}/edit">Edit</a>
-                        </p>
+            <div class="col-md-8" style="width: 85%">
+                <div class="card-body">
+                    <h5 class="card-title">{{ user.name }} {{ user.surname }}</h5>
+                    <div class="card-text">
+                        <p class="description">Birthday: {{ user.birthday }}</p>
+                        <p class="description">Email: {{ user.email }}</p>
+                        <p class="description">Profile created: {{ user.createdAt|date('d-m-Y') }}</p>
                     </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-
-            <div class="col">
-                <p>MY RESERVATIONS</p>
-                <div class="card">
-                    {% for reservedApartment in reservedApartments %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ reservedApartment.title }}</h5>
-                            <div class="card-text">
-                                <p class="description">Address: {{ reservedApartment.address }}</p>
-                                <p class="description">Description: {{ reservedApartment.description }}</p>
-                                <p class="description">Reserved from: {{ reservedApartment.availableFrom|date('d-m-Y') }}</p>
-                                <p class="description">Reserved until: {{ reservedApartment.availableUntil|date('d-m-Y') }}</p>
-                            </div>
-                        </div>
-                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
+
+    {% if session.userid == user.id %}
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <p>MY APARTMENTS FOR BOOKINGS</p>
+                    <div class="card">
+                        {% for createdApartment in createdApartments %}
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="/apartments/{{ createdApartment.id }}">{{ createdApartment.title }}
+                                    ({{ createdApartment.avgRating }} ★)</a>
+                            </h5>
+                            <div class="card-text">
+                                <p class="description">Address: {{ createdApartment.address }}</p>
+                                <p class="description">{{ createdApartment.description }}</p>
+                                <p class="description">Reserved from: {{ createdApartment.availableFrom|date('d-m-Y') }}</p>
+                                <p class="description">Reserved until: {{ createdApartment.availableUntil|date('d-m-Y') }}</p>
+                            </div>
+                            <form method="post" action="/apartments/{{ createdApartment.id }}/delete">
+                                <button type="submit" onclick="return confirm('Are you sure you want to delete this item?')"
+                                        class="btn btn-primary">Delete</button>
+                            </form>
+                            <p>
+                                <a href="/apartments/{{ createdApartment.id }}/edit">Edit</a> |
+                                <a href="/apartments/{{ createdApartment.id }}/reservations">Check reservations</a>
+                            </p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+
+                <div class="col">
+                    <p>MY PLANNED STAYS</p>
+                    <div class="card">
+                        {% for reservedApartment in reservedApartments %}
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <a href="/apartments/{{ reservedApartment.id }}">{{ reservedApartment.title }}
+                                        ({{ reservedApartment.avgRating }} ★)</a>
+                                </h5>
+                                <div class="card-text">
+                                    <p class="description">Address: {{ reservedApartment.address }}</p>
+                                    <p class="description">{{ reservedApartment.description }}</p>
+                                    <p class="description">Reserved from: {{ reservedApartment.availableFrom|date('d-m-Y') }}</p>
+                                    <p class="description">Reserved until: {{ reservedApartment.availableUntil|date('d-m-Y') }}</p>
+                                </div>
+<!--                                <form method="post" action="/apartments/{{ reservedApartment.id }}/cancel/{{ reservations[0].id }}">-->
+<!--                                    <button type="submit" onclick="return confirm('Are you sure you want to cancel this reservation?')"-->
+<!--                                            class="btn btn-primary">Cancel my stay</button>-->
+<!--                                </form>-->
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
 {% else %}
     <div class="card">
         <div class="card-body">

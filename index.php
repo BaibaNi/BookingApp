@@ -5,6 +5,7 @@ require_once 'vendor/autoload.php';
 session_start();
 
 use App\Controllers\ApartmentsController;
+use App\Controllers\ReservationsController;
 use App\Controllers\UsersController;
 use App\Validation\Errors;
 use App\View;
@@ -39,9 +40,14 @@ $dispatcher = FastRoute\simpleDispatcher(function(FastRoute\RouteCollector $r) {
     $r->addRoute('GET', '/apartments/create', [ApartmentsController::class, 'createForm']);
     $r->addRoute('POST', '/apartments', [ApartmentsController::class, 'create']);
 
-    $r->addRoute('POST', '/apartments/{id:\d+}/reserve', [ApartmentsController::class, 'reserve']);
-
     $r->addRoute('POST', '/apartments/{id:\d+}/review', [ApartmentsController::class, 'review']);
+
+//---RESERVATIONS
+    $r->addRoute('GET', '/apartments/{id:\d+}/reservations', [ReservationsController::class, 'index']);
+
+    $r->addRoute('POST', '/apartments/{id:\d+}/reserve', [ReservationsController::class, 'reserve']);
+    $r->addRoute('POST', '/apartments/{id:\d+}/cancel/{reservationid:\d+}', [ReservationsController::class, 'cancel']);
+
 
 });
 

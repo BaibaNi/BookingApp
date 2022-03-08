@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div>
+    <p>
+        <a href="/apartments">Back</a>
+        {% if session.userid is defined %}
+        | <a href="/apartments/create">Add apartment for booking</a>
+        {% endif %}
+    </p>
+</div>
+
+<p>APARTMENT RESERVATIONS</p>
+{% for reservation in reservations %}
+    <div class="card" style="margin: 0 auto">
+        <div class="card-body">
+            <div class="card-text">
+                <p class="description">Reserved from: {{ reservation.reservedFrom|date('d-m-Y') }}</p>
+                <p class="description">Reserved until: {{ reservation.reservedUntil|date('d-m-Y') }}</p>
+                    {% if reservation.userId == users[0].id %}
+                        <p class="description">
+                            Reserved by: <a href="/users/{{ user.id }}">{{ users[0].email }}</a>
+                        </p>
+                    {% endif %}
+            </div>
+        </div>
+    </div>
+{% endfor %}
+
+
+{% endblock %}

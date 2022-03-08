@@ -9,13 +9,14 @@ p{
 
 .description{
     font-family: Century Gothic, sans-serif;
-    font-size: 12px;
+    font-size: 10px;
     color: grey;
     line-height: 12px;
 }
 
 body{
     font-family: Century Gothic, sans-serif;
+    font-size: 12px;
     margin: 1% 2% 1% 2%;
 }
 
@@ -25,6 +26,7 @@ body{
 }
 
 .btn.btn-primary{
+    font-size: 10px;
     background-color: darkseagreen;
     border-color: darkseagreen;
     padding: 0 2% 0 2%;
@@ -42,7 +44,7 @@ body{
 }
 
 .card{
-    margin: 4% 4% 4% 4%;
+    margin: 4% auto 4% auto;
 }
 
 .card-title{
@@ -58,4 +60,8 @@ body{
 
 .form-check.form-check-inline{
     font-size: 12px;
+}
+
+.img-fluid.rounded-start{
+    margin: 4% 0 4% 4%;
 }

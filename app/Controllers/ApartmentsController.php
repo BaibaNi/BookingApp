@@ -9,6 +9,7 @@ use App\Exceptions\ResourceNotFoundException;
 use App\Exceptions\ReviewValidationException;
 use App\Models\Apartment;
 use App\Models\ApartmentAverageRating;
+use App\Models\ApartmentReservation;
 use App\Models\ApartmentReview;
 use App\Redirect;
 use App\Validation\ApartmentFormValidator;
@@ -28,8 +29,17 @@ class ApartmentsController extends Database
             ->executeQuery()
             ->fetchAllAssociative();
 
+
         $apartments = [];
         foreach ($apartmentList as $apartment){
+
+            $apartmentAvgRatingQuery = Database::connection()
+                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
+            $apartmentAvgRatingQuery->bindValue(1, $apartment['id']);
+            $apartmentAvgRating = $apartmentAvgRatingQuery
+                ->executeQuery()
+                ->fetchAssociative();
+
             $apartments[] = new Apartment(
                 $apartment['title'],
                 $apartment['address'],
@@ -37,37 +47,14 @@ class ApartmentsController extends Database
                 $apartment['available_from'],
                 $apartment['available_until'],
                 $apartment['id'],
-                $apartment['user_id']
-            );
-        }
-
-
-        $ratingsList = Database::connection()
-            ->prepare('SELECT distinct apartment_id from apartment_reviews')
-            ->executeQuery()
-            ->fetchAllAssociative();
-
-        $avgRatings = [];
-        foreach ($ratingsList as $apartment) {
-
-            $apartmentAvgRatingQuery = Database::connection()
-                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
-            $apartmentAvgRatingQuery->bindValue(1, $apartment['apartment_id']);
-            $apartmentAvgRating = $apartmentAvgRatingQuery
-                ->executeQuery()
-                ->fetchAssociative();
-
-
-            $avgRatings[] = new ApartmentAverageRating(
-                $apartment['apartment_id'],
+                $apartment['user_id'],
                 (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
-            );
 
+            );
         }
 
         return new View('Apartments/index', [
             'apartments' => $apartments,
-            'avgRatings' => $avgRatings
             ]);
     }
 
@@ -82,6 +69,13 @@ class ApartmentsController extends Database
             ->executeQuery()
             ->fetchAssociative();
 
+        $apartmentAvgRatingQuery = Database::connection()
+            ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
+        $apartmentAvgRatingQuery->bindValue(1, $vars['id']);
+        $apartmentAvgRating = $apartmentAvgRatingQuery
+            ->executeQuery()
+            ->fetchAssociative();
+
         $apartment = new Apartment(
             $apartmentInfo['title'],
             $apartmentInfo['address'],
@@ -89,7 +83,8 @@ class ApartmentsController extends Database
             $apartmentInfo['available_from'],
             $apartmentInfo['available_until'],
             $apartmentInfo['id'],
-            $apartmentInfo['user_id']
+            $apartmentInfo['user_id'],
+            (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
         );
 
 
@@ -98,7 +93,9 @@ class ApartmentsController extends Database
             ->prepare('SELECT * from apartment_reviews join user_profiles 
     on (apartment_reviews.user_id = user_profiles.user_id) and apartment_reviews.apartment_id = ? order by created_at desc');
         $reviewsQuery->bindValue(1, (int) $vars['id']);
-        $reviewsList = $reviewsQuery->executeQuery()->fetchAllAssociative();
+        $reviewsList = $reviewsQuery
+            ->executeQuery()
+            ->fetchAllAssociative();
 
         $reviews = [];
         foreach($reviewsList as $review){
@@ -116,15 +113,30 @@ class ApartmentsController extends Database
         }
 
 
-        $ratingQuery = Database::connection()
-            ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
-        $ratingQuery->bindValue(1, (int) $vars['id']);
-        $avgRating = $ratingQuery->executeQuery()->fetchAssociative();
+        $reservedApartmentsQuery = Database::connection()
+            ->prepare('SELECT * from apartment_reservations
+    join apartments on (apartment_reservations.apartment_id = apartments.id) '); //and apartment_reservations.user_id = ?
+//        $reservedApartmentsQuery->bindValue(1, $_SESSION['userid']);
+        $reservationsInfo = $reservedApartmentsQuery
+            ->executeQuery()
+            ->fetchAllAssociative();
+
+        $reservations = [];
+        foreach ($reservationsInfo as $reservation){
+
+            $reservations[] = new ApartmentReservation(
+                $reservation['reserved_from'],
+                $reservation['reserved_until'],
+                $reservation['id'],
+                $reservation['user_id'],
+                $reservation['apartment_id']
+            );
+        }
 
         return new View('Apartments/show', [
             'apartment' => $apartment,
             'reviews' => $reviews,
-            'avgRating' => number_format($avgRating['AVG(rating)'], 2),
+            'reservations' => $reservations,
             'errors' => Errors::getAll(),
             'inputs' => $_SESSION['inputs'] ?? []
         ]);
@@ -208,6 +220,14 @@ class ApartmentsController extends Database
                 throw new ResourceNotFoundException("Apartment with id {$vars['id']} is not found.");
             }
 
+            $apartmentAvgRatingQuery = Database::connection()
+                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
+            $apartmentAvgRatingQuery->bindValue(1, $vars['id']);
+            $apartmentAvgRating = $apartmentAvgRatingQuery
+                ->executeQuery()
+                ->fetchAssociative();
+
+
             $apartment = new Apartment(
                 $list['title'],
                 $list['address'],
@@ -215,7 +235,8 @@ class ApartmentsController extends Database
                 $list['available_from'],
                 $list['available_until'],
                 $list['id'],
-                $list['user_id']
+                $list['user_id'],
+                (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
             );
 
             return new View('Apartments/edit', [
@@ -236,9 +257,7 @@ class ApartmentsController extends Database
         $validator = new EditFormValidator($_POST, [
             'title' => ['required', 'min:3'],
             'address' => ['required'],
-            'description' => ['required'],
-            'available_from' => ['required'],
-            'available_until' => ['required'],
+            'description' => ['required']
         ]);
 
         try{
@@ -259,80 +278,6 @@ class ApartmentsController extends Database
             $_SESSION['errors'] = $validator->getErrors();
             $_SESSION['inputs'] = $_POST;
             return new Redirect('/apartments/' . (int) $vars['id'] . '/edit');
-        }
-
-    }
-
-
-    public function reserve(array $vars): Redirect
-    {
-        $validator = new BookingFormValidator($_POST, [
-            'available_from' => ['required'],
-            'available_until' => ['required']
-        ]);
-        try{
-            $validator->passes();
-
-            $apartmentQuery = Database::connection()
-                ->prepare('SELECT * FROM apartments where id = ?');
-            $apartmentQuery->bindValue(1, $vars['id']);
-            $apartmentInfo = $apartmentQuery
-                ->executeQuery()
-                ->fetchAssociative();
-
-
-            $requiredFrom = (Carbon::parse($_POST['available_from']))->timestamp;
-            $requiredUntil = (Carbon::parse($_POST['available_until']))->timestamp;
-            $availableFrom = (Carbon::parse($apartmentInfo['available_from']))->timestamp;
-            $availableUntil = (Carbon::parse($apartmentInfo['available_until']))->timestamp;
-
-            if($requiredFrom > $availableFrom
-                && $requiredFrom < $availableUntil
-                && $requiredUntil < $availableUntil
-            ){
-
-                $reservationsInPeriod = Database::connection()
-                    ->prepare('SELECT * from apartment_reservations where apartment_id = ?
-                                           and (reserved_from >= ? and reserved_until <= ?)');
-                $reservationsInPeriod->bindValue(1, $vars['id']);
-                $reservationsInPeriod->bindValue(2, $_POST['available_from']);
-                $reservationsInPeriod->bindValue(3, $_POST['available_until']);
-                $reservationsInfo = $reservationsInPeriod
-                    ->executeQuery()
-                    ->fetchAllAssociative();
-
-//                var_dump($reservationsInfo); die;
-
-                if(empty($reservationsInfo)){
-                    Database::connection()
-                        ->insert('apartment_reservations', [
-                            'reserved_from' => $_POST['available_from'],
-                            'reserved_until' => $_POST['available_until'],
-                            'apartment_id' => $vars['id'],
-                            'user_id' => $_SESSION['userid'],
-                        ]);
-
-                        Database::connection()
-                            ->update('apartments', [
-                                'available_from' => $_POST['available_until'],
-                            ], [
-                                'id' => $vars['id']
-                            ]);
-
-                } else{
-                    throw new BookingValidationException('Selected period is not available');
-                }
-
-            } else {
-                throw new BookingValidationException('Selected period is not available');
-            }
-
-            return new Redirect('/users/' . $_SESSION['userid']);
-
-        } catch(BookingValidationException $exception){
-            $_SESSION['errors'] = $validator->getErrors();
-            $_SESSION['inputs'] = $_POST;
-            return new Redirect('/apartments/' . $vars['id']);
         }
 
     }
