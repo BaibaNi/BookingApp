@@ -1,14 +1,12 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div>
-    <p>
-        <a href="/">Back</a>
-        {% if session.userid is defined %}
-            | <a href="/apartments/create">Add apartment for booking</a>
-        {% endif %}
-    </p>
-</div>
+<nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Apartments</li>
+    </ol>
+</nav>
 
 <p>AVAILABLE APARTMENTS</p>
     {% for apartment in apartments %}
@@ -20,32 +18,20 @@
             </div>
             <div class="col-md-8" style="width: 75%">
                 <div class="card-body">
-                    <h5 class="card-title">
-                        <a href="/apartments/{{ apartment.id }}">{{ apartment.title }} ({{ apartment.avgRating }} ★)</a>
-                    </h5>
+                    <h5 class="card-title">{{ apartment.title }} <span class="badge bg-secondary">{{ apartment.avgRating }} ★</span></h5>
                     <div class="card-text">
+                        <p class="description">Price: <b>{{ apartment.price }}</b> EUR per night</p>
                         <p class="description">Address: {{ apartment.address }}</p>
                         <p class="description">{{ apartment.description }}</p>
-                        <p class="description">Available from: {{ apartment.availableFrom|date('d-m-Y') }}</p>
-                        <p class="description">Available until: {{ apartment.availableUntil|date('d-m-Y') }}</p>
                     </div>
 
                     <div>
-                        {% if session.userid == apartment.userId %}
-                            <form method="post" action="/apartments/{{ apartment.id }}/delete">
-                                <button type="submit" onclick="return confirm('Are you sure you want to delete this apartment?')"
-                                        class="btn btn-primary">Delete</button>
-                            </form>
-                            <a href="/apartments/{{ apartment.id }}/edit">Edit</a> |
-                        {% endif %}
-                            <a href="/apartments/{{ apartment.id }}">Reserve</a> |
-                            <a href="/apartments/{{ apartment.id }}">Give review</a>
+                        <a href="/apartments/{{ apartment.id }}" class="btn btn-primary">VIEW</a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
     {% endfor %}
 
 

@@ -1,15 +1,13 @@
 {% extends "layout.html" %}
 
 {% block content %}
-
-<div>
-    <p>
-        <a href="/apartments">Back</a>
-        {% if session.userid is defined %}
-            | <a href="/apartments/create">Add apartment for booking</a>
-        {% endif %}
-    </p>
-</div>
+<nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/apartments">Apartments</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ apartment.title }}</li>
+    </ol>
+</nav>
 
 <div class="container">
     <div class="row">
@@ -19,24 +17,42 @@
                 <img src="https://imagesvc.meredithcorp.io/v3/mm/image?url=https%3A%2F%2Fstatic.onecms.io%2Fwp-content%2Fuploads%2Fsites%2F24%2F2020%2F06%2F02%2Fbeachside-bungalow-plan-sl-1117_0-2000.jpg&w=400&h=268&c=sc&poi=face&q=60"
                      class="card-img-top" alt="house" style="width: 265px; margin: 1% auto">
                 <div class="card-body">
-                    <div>
-                        <h5 class="card-title">{{ apartment.title }} ({{ apartment.avgRating }} ★)</h5>
-                    </div>
+                    <h5 class="card-title">{{ apartment.title }} <span class="badge bg-secondary">{{ apartment.avgRating }} ★</span></h5>
                     <div class="card-text">
+                        <p class="description">Price: <b>{{ apartment.price }} EUR/per night</b></p>
                         <p class="description">Address: {{ apartment.address }}</p>
                         <p class="description">{{ apartment.description }}</p>
-                        <p class="description">Available from: {{ apartment.availableFrom|date('d-m-Y') }}</p>
-                        <p class="description">Available until: {{ apartment.availableUntil|date('d-m-Y') }}</p>
                     </div>
-                    {% if session.userid == apartment.userId %}
-                    <form method="post" action="/apartments/{{ apartment.id }}/delete">
-                        <button type="submit" onclick="return confirm('Are you sure you want to delete this item?')" class="btn btn-primary">Delete</button>
-                    </form>
-                    <p>
-                        <a href="/apartments/{{ apartment.id }}/edit">Edit</a> |
-                        <a href="/apartments/{{ apartment.id }}/reservations">Check reservations</a>
-                    </p>
-                    {% endif %}
+
+                    <button class="btn btn-primary" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasRight" aria-controls="offcanvasRight">
+                        REVIEWS ({{ reviews|length }})
+                    </button>
+
+                    <div class="offcanvas offcanvas-end" tabindex="-1" id="offcanvasRight" aria-labelledby="offcanvasRightLabel">
+                        <div class="offcanvas-header">
+                            <h5 id="offcanvasRightLabel" style="color: purple">REVIEWS</h5>
+                            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                        </div>
+                        <div class="offcanvas-body">
+                            {% if reviews is empty %}
+                            <p>No reviews yet.</p>
+                            {% else %}
+
+                            <ul class="list-group list-group-flush">
+                                {% for review in reviews %}
+
+                                <li class="list-group-item">
+                                    {{ review.review }}
+                                    <p class="description">{{ review.name }} {{ review.surname }} | Posted on: {{ review.createdAt|date('d-m-Y')}}</p>
+                                </li>
+                                {% endfor %}
+                            </ul>
+
+                            {% endif %}
+                        </div>
+                    </div>
+
+
                 </div>
             </div>
         </div>
@@ -45,25 +61,19 @@
         <div class="col">
             <div class="card" style="width: 18rem;">
                 <div class="card-body">
-                    <h5 class="card-title">SELECT THE RESERVATION PERIOD:</h5>
+                    <h5 class="card-title">SELECT THE DATES FOR YOUR STAY:</h5>
                     <div class="card-text">
                         <form method="post" action="/apartments/{{ apartment.id }}/reserve">
-                            <div>
-                                <label for="available_from" class="form-label">From:</label>
-                                <input type="date" id="available_from" name="available_from" class="form-control"/>
-                                {% if errors.available_from %}
-                                <p class="small_error">{{ errors.available_from[0] }}</p>
-                                {% endif %}
-                            </div>
-                            <div>
-                                <label for="available_until" class="form-label">Till:</label>
-                                <input type="date" id="available_until" name="available_until" class="form-control"/>
-                                {% if errors.available_until %}
-                                <p class="small_error">{{ errors.available_until[0] }}</p>
-                                {% endif %}
-                            </div>
 
-                            <button type="submit" class="btn btn-primary">Reserve</button>
+                            <label for="date_range"></label>
+                            <input type="text" id="date_range" name="date_range" value="" class="form-control"/>
+                            <br>
+
+                            <div id="total_days" class="description">TOTAL NIGHTS: <b><span id="days">0</span></b> NIGHTS</div>
+                            <div id="total_price" class="description">TOTAL PRICE: <b><span id="price">0</span></b> EUR</div>
+                            <br>
+
+                            <button type="submit" class="btn btn-primary" onclick="return confirm('Confirm the dates?')">RESERVE</button>
                         </form>
                     </div>
                 </div>
@@ -80,50 +90,50 @@
                     <div class="card-text">
                         <form method="post" action="/apartments/{{ apartment.id }}/review">
                             <div>
-                                <label for="review" class="form-label">Leave a review:</label>
+                                <label for="review" class="form-label"></label>
                                 <textarea id="review" name="review" class="form-control">{{ inputs.review }}</textarea>
                                 {% if errors.review %}
                                     <p class="small_error">{{ errors.review[0] }}</p>
                                 {% endif %}
                             </div>
 
-                            <div>
-                                <div class="form-check form-check-inline">
+                            <div class="col">
+                                <div class="form-check">
                                     <input class="form-check-input" type="radio" name="rating" id="rating1" value="5">
                                     <label class="form-check-label" for="rating1">
                                         5 - Excellent
                                     </label>
                                 </div>
-                                <div class="form-check form-check-inline">
+                                <div class="form-check">
                                     <input class="form-check-input" type="radio" name="rating" id="rating2" value="4">
                                     <label class="form-check-label" for="rating2">
                                         4 - Very good
                                     </label>
                                 </div>
-                                <div class="form-check form-check-inline">
+                                <div class="form-check">
                                     <input class="form-check-input" type="radio" name="rating" id="rating3" value="3">
                                     <label class="form-check-label" for="rating3">
                                         3 - Good
                                     </label>
                                 </div>
-                                <div class="form-check form-check-inline">
+                                <div class="form-check">
                                     <input class="form-check-input" type="radio" name="rating" id="rating4" value="2">
                                     <label class="form-check-label" for="rating4">
                                         2 - Bad
                                     </label>
                                 </div>
-                                <div class="form-check form-check-inline">
+                                <div class="form-check">
                                     <input class="form-check-input" type="radio" name="rating" id="rating5" value="1">
                                     <label class="form-check-label" for="rating5">
-                                        1 - Vary bad
+                                        1 - Very bad
                                     </label>
                                 </div>
                                 {% if errors.rating %}
-                                <p class="small_error">{{ errors.rating[0] }}</p>
+                                    <p class="small_error">{{ errors.rating[0] }}</p>
                                 {% endif %}
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-primary">Add review</button>
+                                <button type="submit" class="btn btn-primary">ADD REVIEW</button>
                             </div>
                         </form>
                     </div>
@@ -136,27 +146,73 @@
 
 {% if session.userid is defined %}
 <br>
-    <h5>All reviews:</h5>
-    {% if reviews is not empty %}
 
-        {% for review in reviews %}
-        <div class="card" style="margin: 0 auto 1% auto">
-            <div class="card-body" style="margin: 1% 1% 1% 1%">
-                <p>{{ review.review }}</p>
-                <p class="description">{{ review.name }} {{ review.surname }} | Posted on: {{ review.createdAt|date('d-m-Y')}}</p>
-            </div>
-        </div>
-        {% endfor %}
 
-    {% else %}
-        <div class="card" style="margin: 0 auto 1% auto">
-            <div class="card-body">
-                <p>There are no reviews yet.</p>
-            </div>
-        </div>
-    {% endif %}
 {% endif %}
 
+
+
+
+
+
+
+
+
+{% endblock %}
+
+{% block scripts %}
+
+
+<script type="text/javascript">
+
+    var datesDisabled = {{ reservationDates|json_encode()|raw }}
+    var startDate = {{ apartment.availableFrom|json_encode()|raw }}
+    var endDate = {{ apartment.availableUntil|json_encode()|raw }}
+    var pricePerNight = {{ apartment.price }}
+
+    $('#date_range').daterangepicker({
+        // autoUpdateInput: false,
+        locale: { cancelLabel: 'Clear'},
+        opens: 'left',
+        minDate: startDate,
+        maxDate: endDate,
+
+        isInvalidDate: function(arg){
+            // Prepare the date comparision
+            var thisMonth = arg._d.getMonth() + 1;   // Months are 0 based
+            if (thisMonth < 10){
+                thisMonth = "0" + thisMonth; // Leading 0
+            }
+            var thisDate = arg._d.getDate();
+            if (thisDate < 10){
+                thisDate = "0" + thisDate; // Leading 0
+            }
+            var thisYear = arg._d.getYear() + 1900;   // Years are 1900 based
+
+            var thisCompare = thisMonth + "/" + thisDate + "/" + thisYear;
+
+            if($.inArray(thisCompare, datesDisabled) !== -1){
+                return true;
+            }
+        }
+
+    })
+    .on('cancel.daterangepicker', function(ev, picker) {
+    //do something, like clearing an input
+        $('#date_range').val('');
+    })
+    .change(function () {
+        var daterange = $('#date_range').val().split('-');
+        var start =new Date(daterange[0]);
+        var end =new Date(daterange[1]);
+        var diff = new Date(end - start);
+        var days = Math.ceil(diff / 1000 / 60 / 60 / 24);
+
+        document.getElementById("days").innerHTML = days;
+        document.getElementById("price").innerHTML = days * pricePerNight;
+    });
+
+</script>
 
 
 {% endblock %}

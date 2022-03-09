@@ -19,6 +19,7 @@ use App\Validation\Errors;
 use App\Validation\ReviewFormValidator;
 use App\View;
 use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class ApartmentsController extends Database
 {
@@ -44,6 +45,7 @@ class ApartmentsController extends Database
                 $apartment['title'],
                 $apartment['address'],
                 $apartment['description'],
+                $apartment['price'],
                 $apartment['available_from'],
                 $apartment['available_until'],
                 $apartment['id'],
@@ -80,8 +82,9 @@ class ApartmentsController extends Database
             $apartmentInfo['title'],
             $apartmentInfo['address'],
             $apartmentInfo['description'],
-            $apartmentInfo['available_from'],
-            $apartmentInfo['available_until'],
+            $apartmentInfo['price'],
+            date('m-d-Y', strtotime($apartmentInfo['available_from'])),
+            date('m-d-Y', strtotime($apartmentInfo['available_until'])),
             $apartmentInfo['id'],
             $apartmentInfo['user_id'],
             (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
@@ -99,7 +102,6 @@ class ApartmentsController extends Database
 
         $reviews = [];
         foreach($reviewsList as $review){
-
             $reviews[] = new ApartmentReview(
                 $review['name'],
                 $review['surname'],
@@ -109,34 +111,39 @@ class ApartmentsController extends Database
                 $review['id'],
                 $review['apartment_id']
             );
-
         }
 
 
         $reservedApartmentsQuery = Database::connection()
             ->prepare('SELECT * from apartment_reservations
-    join apartments on (apartment_reservations.apartment_id = apartments.id) '); //and apartment_reservations.user_id = ?
-//        $reservedApartmentsQuery->bindValue(1, $_SESSION['userid']);
+    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.apartment_id = ?');
+        $reservedApartmentsQuery->bindValue(1, (int) $vars['id']);
         $reservationsInfo = $reservedApartmentsQuery
             ->executeQuery()
             ->fetchAllAssociative();
 
         $reservations = [];
         foreach ($reservationsInfo as $reservation){
-
-            $reservations[] = new ApartmentReservation(
-                $reservation['reserved_from'],
-                $reservation['reserved_until'],
-                $reservation['id'],
-                $reservation['user_id'],
-                $reservation['apartment_id']
-            );
+            $reservations[] = [$reservation['reserved_from'], $reservation['reserved_until']];
         }
+
+        $reservationDates = [];
+//        $totalPrice = 0;
+        foreach ($reservations as $record){
+            [$startDate, $endDate] = $record;
+            $period = CarbonPeriod::create($startDate, $endDate);
+            foreach ($period as $date){
+                $reservationDates[] = $date->format('m/d/Y');
+            }
+        }
+
+        $totalPrice = count($reservationDates) * $apartmentInfo['price'];
 
         return new View('Apartments/show', [
             'apartment' => $apartment,
             'reviews' => $reviews,
-            'reservations' => $reservations,
+            'reservationDates' => $reservationDates,
+            'totalPrice' => $totalPrice,
             'errors' => Errors::getAll(),
             'inputs' => $_SESSION['inputs'] ?? []
         ]);
@@ -158,6 +165,7 @@ class ApartmentsController extends Database
             'title' => ['required', 'min:3'],
             'address' => ['required'],
             'description' => ['required'],
+            'price' => ['required']
         ]);
         try{
             $validator->passes();
@@ -181,6 +189,7 @@ class ApartmentsController extends Database
                     'title' => $_POST['title'],
                     'address' => $_POST['address'],
                     'description' => $_POST['description'],
+                    'price' => $_POST['price'],
                     'available_from' => $availableFrom,
                     'available_until' => $availableUntil
                 ]);
@@ -232,6 +241,7 @@ class ApartmentsController extends Database
                 $list['title'],
                 $list['address'],
                 $list['description'],
+                $list['price'],
                 $list['available_from'],
                 $list['available_until'],
                 $list['id'],
@@ -268,6 +278,7 @@ class ApartmentsController extends Database
                     'title' => $_POST['title'],
                     'address' => $_POST['address'],
                     'description' => $_POST['description'],
+                    'price' => $_POST['price']
                 ], [
                         'id' => (int)$vars['id'],
                     ]

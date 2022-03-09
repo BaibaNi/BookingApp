@@ -1,31 +1,33 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div>
-    <p>
-        <a href="/apartments">Back</a>
-        {% if session.userid is defined %}
-        | <a href="/apartments/create">Add apartment for booking</a>
-        {% endif %}
-    </p>
-</div>
+
+<nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/apartments">Apartments</a></li>
+        <li class="breadcrumb-item"><a href="/users/{{ session.userid }}">User</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Apartment reservations</li>
+    </ol>
+</nav>
+
 
 <p>APARTMENT RESERVATIONS</p>
-{% for reservation in reservations %}
-    <div class="card" style="margin: 0 auto">
-        <div class="card-body">
-            <div class="card-text">
-                <p class="description">Reserved from: {{ reservation.reservedFrom|date('d-m-Y') }}</p>
-                <p class="description">Reserved until: {{ reservation.reservedUntil|date('d-m-Y') }}</p>
-                    {% if reservation.userId == users[0].id %}
-                        <p class="description">
-                            Reserved by: <a href="/users/{{ user.id }}">{{ users[0].email }}</a>
-                        </p>
-                    {% endif %}
-            </div>
-        </div>
-    </div>
-{% endfor %}
 
+{% if reservations is empty %}
+    <p>No reservations yet.</p>
+{% else %}
+
+    <ul class="list-group list-group-flush">
+        {% for reservation in reservations %}
+            <li class="list-group-item">
+                Reserved from: <b>{{ reservation.reservedFrom|date('d-m-Y') }}</b>
+                until: <b>{{ reservation.reservedUntil|date('d-m-Y') }}</b> |
+                Reserved by: <a href="/users/{{ reservation.userId }}">{{ reservation.email }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+
+{% endif %}
 
 {% endblock %}

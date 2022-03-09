@@ -15,45 +15,35 @@ class ReservationsController extends Database
     public function index(array $vars): View
     {
         $reservedApartmentsQuery = Database::connection()
-            ->prepare('SELECT * from apartment_reservations where apartment_id = ?');
+            ->prepare('SELECT * from apartment_reservations where apartment_id = ? order by reserved_from asc ');
         $reservedApartmentsQuery->bindValue(1, $vars['id']);
         $reservationsInfo = $reservedApartmentsQuery
             ->executeQuery()
             ->fetchAllAssociative();
 
         $reservations = [];
-        $users = [];
 
         foreach ($reservationsInfo as $reservation) {
 
-            $usersListQuery = Database::connection()
-                ->prepare('SELECT * FROM users where id = ?');
-            $usersListQuery->bindValue(1, $reservation['user_id']);
-            $usersList = $usersListQuery
+            $usersEmailsQuery = Database::connection()
+                ->prepare('SELECT email FROM users where id = ?');
+            $usersEmailsQuery->bindValue(1, $reservation['user_id']);
+            $userEmail = $usersEmailsQuery
                 ->executeQuery()
-                ->fetchAllAssociative();
+                ->fetchOne();
 
 
             $reservations[] = new ApartmentReservation(
                 $reservation['reserved_from'],
                 $reservation['reserved_until'],
+                $userEmail,
                 $reservation['id'],
                 $reservation['user_id'],
                 $reservation['apartment_id']
             );
-
-            foreach ($usersList as $user) {
-                $users[] = new User(
-                    $user['email'],
-                    $user['password'],
-                    $user['created_at'],
-                    $user['id']
-                );
-            }
         }
 
         return new View('Reservations/index', [
-            'users' => $users,
             'reservations' => $reservations
         ]);
     }
@@ -61,12 +51,16 @@ class ReservationsController extends Database
 
     public function reserve(array $vars): Redirect
     {
+
         $validator = new BookingFormValidator($_POST, [
-            'available_from' => ['required'],
-            'available_until' => ['required']
+            'date_range' => ['required'],
         ]);
         try{
             $validator->passes();
+
+            $dateRange = explode('-', $_POST['date_range']);
+            $startDate = $dateRange[0];
+            $endDate = $dateRange[1];
 
             $apartmentQuery = Database::connection()
                 ->prepare('SELECT * FROM apartments where id = ?');
@@ -76,42 +70,38 @@ class ReservationsController extends Database
                 ->fetchAssociative();
 
 
-            $requiredFrom = (Carbon::parse($_POST['available_from']))->timestamp;
-            $requiredUntil = (Carbon::parse($_POST['available_until']))->timestamp;
+            $requiredFromCalendar = (Carbon::parse($startDate))->timestamp;
+            $requiredUntilCalendar = (Carbon::parse($endDate))->timestamp;
             $availableFrom = (Carbon::parse($apartmentInfo['available_from']))->timestamp;
             $availableUntil = (Carbon::parse($apartmentInfo['available_until']))->timestamp;
 
-            if($requiredFrom > $availableFrom
-                && $requiredFrom < $availableUntil
-                && $requiredUntil < $availableUntil
+            if($requiredFromCalendar > $availableFrom
+                && $requiredFromCalendar < $availableUntil
+                && $requiredUntilCalendar < $availableUntil
+                && $requiredFromCalendar < $requiredUntilCalendar
             ){
+
+                $reservedFrom = Carbon::createFromTimestamp($requiredFromCalendar)->format('Y-m-d');
+                $reservedUntil = Carbon::createFromTimestamp($requiredUntilCalendar)->format('Y-m-d');
 
                 $reservationsInPeriod = Database::connection()
                     ->prepare('SELECT * from apartment_reservations where apartment_id = ?
                                            and (reserved_from >= ? and reserved_until <= ?)');
                 $reservationsInPeriod->bindValue(1, $vars['id']);
-                $reservationsInPeriod->bindValue(2, $_POST['available_from']);
-                $reservationsInPeriod->bindValue(3, $_POST['available_until']);
+                $reservationsInPeriod->bindValue(2, $reservedFrom);
+                $reservationsInPeriod->bindValue(3, $reservedUntil);
                 $reservationsInfo = $reservationsInPeriod
                     ->executeQuery()
                     ->fetchAllAssociative();
 
-//                var_dump($reservationsInfo); die;
 
                 if(empty($reservationsInfo)){
                     Database::connection()
                         ->insert('apartment_reservations', [
-                            'reserved_from' => $_POST['available_from'],
-                            'reserved_until' => $_POST['available_until'],
+                            'reserved_from' => $reservedFrom,
+                            'reserved_until' => $reservedUntil,
                             'apartment_id' => $vars['id'],
                             'user_id' => $_SESSION['userid'],
-                        ]);
-
-                    Database::connection()
-                        ->update('apartments', [
-                            'available_from' => $_POST['available_until'],
-                        ], [
-                            'id' => $vars['id']
                         ]);
 
                 } else{
@@ -133,14 +123,14 @@ class ReservationsController extends Database
     }
 
 
-    public function cancel(array $vars): Redirect
-    {
-        var_dump($vars['id'],$vars['reservationid']);die;
-        Database::connection()
-            ->delete('apartment_reservations', [
-                'id' => (int)$vars['reservationid']
-            ]);
-
-        return new Redirect('/users/' . $vars['id']);
-    }
+//    public function cancel(array $vars): Redirect
+//    {
+//        var_dump($vars['id'],$vars['reservationid']);die;
+//        Database::connection()
+//            ->delete('apartment_reservations', [
+//                'id' => (int)$vars['reservationid']
+//            ]);
+//
+//        return new Redirect('/users/' . $vars['id']);
+//    }
 }

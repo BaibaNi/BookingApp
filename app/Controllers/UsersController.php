@@ -80,7 +80,7 @@ class UsersController extends Database
 
 //---created apartments for booking
         $createdApartmentQuery = Database::connection()
-            ->prepare('SELECT * FROM apartments where user_id = ?');
+            ->prepare('SELECT * FROM apartments where user_id = ? order by available_from desc ');
         $createdApartmentQuery->bindValue(1, $_SESSION['userid']);
         $apartmentInfo = $createdApartmentQuery
             ->executeQuery()
@@ -100,19 +100,20 @@ class UsersController extends Database
                  $apartment['title'],
                  $apartment['address'],
                  $apartment['description'],
+                 $apartment['price'],
                  $apartment['available_from'],
                  $apartment['available_until'],
                  $apartment['id'],
                  $apartment['user_id'],
                 (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
-
             );
         }
 
 //---reserved apartments
         $reservedApartmentsQuery = Database::connection()
             ->prepare('SELECT * from apartment_reservations
-    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.user_id = ?');
+    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.user_id = ? 
+    order by reserved_from asc ');
         $reservedApartmentsQuery->bindValue(1, $_SESSION['userid']);
         $reservedApartmentsInfo = $reservedApartmentsQuery
             ->executeQuery()
@@ -132,6 +133,7 @@ class UsersController extends Database
                 $reservation['title'],
                 $reservation['address'],
                 $reservation['description'],
+                $reservation['price'],
                 $reservation['reserved_from'],
                 $reservation['reserved_until'],
                 $reservation['id'],
@@ -142,7 +144,8 @@ class UsersController extends Database
 
 
         $reservationsQuery = Database::connection()
-            ->prepare('SELECT * from apartment_reservations where user_id = ?');
+            ->prepare('SELECT * from apartment_reservations 
+    join users on (apartment_reservations.user_id = users.id) and apartment_reservations.user_id = ?');
         $reservationsQuery->bindValue(1, $vars['id']);
         $reservationsInfo = $reservationsQuery
             ->executeQuery()
@@ -154,6 +157,7 @@ class UsersController extends Database
             $reservations[] = new ApartmentReservation(
                 $reservation['reserved_from'],
                 $reservation['reserved_until'],
+                $reservation['email'],
                 $reservation['id'],
                 $reservation['user_id'],
                 $reservation['apartment_id']

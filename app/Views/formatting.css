@@ -43,6 +43,10 @@ body{
     margin: 0 1% 0 1%;
 }
 
+.col-md-4{
+    padding: 1% 1% 1% 1%;
+}
+
 .card{
     margin: 4% auto 4% auto;
 }

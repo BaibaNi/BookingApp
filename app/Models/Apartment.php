@@ -6,19 +6,21 @@ class Apartment
     private string $title;
     private string $address;
     private string $description;
+    private float $price;
     private ?string $availableFrom;
     private string $availableUntil;
     private ?int $id;
     private int $userId;
     private ?float $avgRating;
 
-    public function __construct(string $title, string $address, string $description,
+    public function __construct(string $title, string $address, string $description, float $price,
                                 ?string $availableFrom, string $availableUntil,
                                 ?int $id, int $userId, ?float $avgRating)
     {
         $this->title = $title;
         $this->address = $address;
         $this->description = $description;
+        $this->price = $price;
         $this->availableFrom = $availableFrom;
         $this->availableUntil = $availableUntil;
         $this->id = $id;
@@ -39,6 +41,11 @@ class Apartment
     public function getDescription(): string
     {
         return $this->description;
+    }
+
+    public function getPrice(): float
+    {
+        return $this->price;
     }
 
     public function getAvailableFrom(): string

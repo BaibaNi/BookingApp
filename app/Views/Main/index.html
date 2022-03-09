@@ -3,6 +3,14 @@
 {% block content %}
 
 {% if session.userid is defined %}
+
+<nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item active" aria-current="page">Home</li>
+    </ol>
+</nav>
+
+
     <div class="container" style="margin-top: 5%">
         <div class="col" style="text-align: center">
             <p>WELCOME TO THE APARTMENT BOOKING APP</p>
@@ -11,8 +19,8 @@
     <div class="container">
         <div class="col" style="text-align: center">
             <p>
-                <a href="/apartments" class="btn btn-primary">Select apartments</a> |
-                <a href="/apartments/create" class="btn btn-primary">Add apartment for booking</a>
+                <a href="/apartments" class="btn btn-primary">SELECT APARTMENTS</a> |
+                <a href="/apartments/create" class="btn btn-primary">LIST YOUR APARTMENT</a>
             </p>
         </div>
     </div>
@@ -42,7 +50,7 @@
                 </div>
 
                 <div>
-                    <button type="submit" class="btn btn-primary">Log in</button>
+                    <button type="submit" class="btn btn-primary">LOG IN</button>
                 </div>
             </form>
         </div>
@@ -81,21 +89,21 @@
                 </div>
                 <div>
                     <label for="password_reg" class="form-label">Password:</label>
-                    <input type="text" id="password_reg" name="password_reg" class="form-control"/>
+                    <input type="password" id="password_reg" name="password_reg" class="form-control"/>
                     {% if errors.password_reg %}
                         <p class="small_error">{{ errors.password_reg[0] }}</p>
                     {% endif %}
                 </div>
                 <div>
                     <label for="password_repeat" class="form-label">Repeat password:</label>
-                    <input type="text" id="password_repeat" name="password_repeat" class="form-control"/>
+                    <input type="password" id="password_repeat" name="password_repeat" class="form-control"/>
                     {% if errors.password_repeat %}
                         <p class="small_error">{{ errors.password_repeat[0] }}</p>
                     {% endif %}
                 </div>
 
                 <div>
-                    <button type="submit" class="btn btn-primary">Register</button>
+                    <button type="submit" class="btn btn-primary">REGISTER</button>
                 </div>
             </form>
         </div>

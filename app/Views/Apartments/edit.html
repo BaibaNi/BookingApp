@@ -1,9 +1,14 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<div>
-    <p><a href="/apartments/{{ apartment.id }}">Back</a></p>
-</div>
+<nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/apartments">Apartments</a></li>
+        <li class="breadcrumb-item"><a href="/users/{{ session.userid }}">User</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Edit apartment information</li>
+    </ol>
+</nav>
 
 {% if session.userid is defined %}
 <div class="container">
@@ -28,6 +33,13 @@
             <textarea id="description" name="description" class="form-control">{{ apartment.description }}</textarea>
             {% if errors.description %}
                 <p class="small_error">{{ errors.description[0] }}</p>
+            {% endif %}
+        </div>
+        <div>
+            <label for="price" class="form-label">Price (EUR) per night:</label>
+            <input id="price" name="price" class="form-control" value="{{ apartment.price }}"/>
+            {% if errors.price %}
+                <p class="small_error">{{ errors.price[0] }}</p>
             {% endif %}
         </div>
         <p>Available from: {{ apartment.availableFrom|date('d-m-Y') }}</p>
