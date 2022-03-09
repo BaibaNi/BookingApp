@@ -206,12 +206,33 @@ class ApartmentsController extends Database
 
     public function delete(array $vars): Redirect
     {
-        Database::connection()
-            ->delete('apartments', [
-                'id' => (int)$vars['id'],
-            ]);
 
-        return new Redirect('/apartments');
+//        try{
+//
+//            $reservedApartmentsQuery = Database::connection()
+//                ->prepare('SELECT * from apartment_reservations
+//    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.apartment_id = ?');
+//            $reservedApartmentsQuery->bindValue(1, (int) $vars['id']);
+//            $reservationsInfo = $reservedApartmentsQuery
+//                ->executeQuery()
+//                ->fetchAllAssociative();
+//
+//            if (!empty($reservationsInfo)) {
+//                throw new ResourceNotFoundException("Apartment has reservations.");
+//            } else{
+                Database::connection()
+                    ->delete('apartments', [
+                        'id' => (int)$vars['id'],
+                    ]);
+//            }
+
+            return new Redirect('/users/' . $_SESSION['userid']);
+
+//        } catch(ResourceNotFoundException $exception){
+////            $message = $exception->getMessage();
+//            return new Redirect('404');
+//        }
+
     }
 
 
@@ -255,7 +276,7 @@ class ApartmentsController extends Database
                 'inputs' => $_SESSION['inputs'] ?? []
             ]);
         } catch (ResourceNotFoundException $exception){
-            var_dump($exception->getMessage());
+            $message = $exception->getMessage();
             return new View('404');
         }
     }
@@ -319,6 +340,4 @@ class ApartmentsController extends Database
             return new Redirect("/apartments/{$vars['id']}");
         }
     }
-
-
 }
