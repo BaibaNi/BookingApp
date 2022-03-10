@@ -20,6 +20,7 @@ use App\Validation\ReviewFormValidator;
 use App\View;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
+use TheCodeMill\FlashMessage\Message;
 
 class ApartmentsController extends Database
 {
@@ -194,6 +195,7 @@ class ApartmentsController extends Database
                     'available_until' => $availableUntil
                 ]);
 
+            $_SESSION['status'] = 'Your apartment is listed!';
             return new Redirect('/users/' . $_SESSION['userid']);
 
         } catch(ApartmentValidationException $exception){
@@ -226,6 +228,7 @@ class ApartmentsController extends Database
                     ]);
 //            }
 
+            $_SESSION['status'] = 'Your listed apartment is deleted.';
             return new Redirect('/users/' . $_SESSION['userid']);
 
 //        } catch(ResourceNotFoundException $exception){
@@ -305,6 +308,7 @@ class ApartmentsController extends Database
                     ]
                 );
 
+            $_SESSION['status'] = 'Changes saved.';
             return new Redirect('/apartments/' . (int) $vars['id']);
         } catch (EditValidationException $exception){
             $_SESSION['errors'] = $validator->getErrors();
@@ -333,6 +337,7 @@ class ApartmentsController extends Database
                     'rating' => $_POST['rating']
                 ]);
 
+            $_SESSION['status'] = 'Thank you! Your feedback is registered!';
             return new Redirect("/apartments/{$vars['id']}");
         } catch(ReviewValidationException $exception){
             $_SESSION['errors'] = $validator->getErrors();

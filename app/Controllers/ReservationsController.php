@@ -105,14 +105,16 @@ class ReservationsController extends Database
                         ]);
 
                 } else{
+                    $_SESSION['status'] = 'Selected period is not available!';
                     throw new BookingValidationException('Selected period is not available');
                 }
 
             } else {
+                $_SESSION['status'] = 'Selected period is not available!';
                 throw new BookingValidationException('Selected period is not available');
             }
-
-            return new Redirect('/users/' . $_SESSION['userid']);
+            $_SESSION['status'] = 'Registration is successful!';
+            return new Redirect('/apartments/' . $vars['id']);
 
         } catch(BookingValidationException $exception){
             $_SESSION['errors'] = $validator->getErrors();
@@ -133,4 +135,5 @@ class ReservationsController extends Database
 //
 //        return new Redirect('/users/' . $vars['id']);
 //    }
+
 }

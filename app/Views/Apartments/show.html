@@ -1,7 +1,7 @@
 {% extends "layout.html" %}
 
 {% block content %}
-<nav style="--bs-breadcrumb-divider: url(&#34;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8'%3E%3Cpath d='M2.5 0L1 1.5 3.5 4 1 6.5 2.5 8l4-4-4-4z' fill='currentColor'/%3E%3C/svg%3E&#34;);" aria-label="breadcrumb">
+<nav style="--bs-breadcrumb-divider: '>'" aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="/">Home</a></li>
         <li class="breadcrumb-item"><a href="/apartments">Apartments</a></li>
@@ -74,6 +74,7 @@
                             <br>
 
                             <button type="submit" class="btn btn-primary" onclick="return confirm('Confirm the dates?')">RESERVE</button>
+
                         </form>
                     </div>
                 </div>
@@ -150,14 +151,6 @@
 
 {% endif %}
 
-
-
-
-
-
-
-
-
 {% endblock %}
 
 {% block scripts %}
@@ -174,7 +167,7 @@
         // autoUpdateInput: false,
         locale: { cancelLabel: 'Clear'},
         opens: 'left',
-        minDate: startDate,
+        minDate:  startDate,
         maxDate: endDate,
 
         isInvalidDate: function(arg){
@@ -198,7 +191,7 @@
 
     })
     .on('cancel.daterangepicker', function(ev, picker) {
-    //do something, like clearing an input
+    //clearing an input
         $('#date_range').val('');
     })
     .change(function () {
@@ -213,6 +206,7 @@
     });
 
 </script>
+
 
 
 {% endblock %}

@@ -69,3 +69,10 @@ body{
 .img-fluid.rounded-start{
     margin: 4% 0 4% 4%;
 }
+
+.alert{
+    background-color: darkseagreen;
+    border-color: darkseagreen;
+    color: whitesmoke;
+    text-align: center;
+}
