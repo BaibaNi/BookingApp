@@ -3,21 +3,30 @@
 {% block content %}
 
 {% if session.userid is defined %}
-<div>
-    <p>
-        <a href="/">Back</a> |
-        OTHER USERS AND THEIR REVIEWS?
-    </p>
-</div>
+<nav style="--bs-breadcrumb-divider: '>'" aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        <li class="breadcrumb-item"><a href="/apartments">Apartments</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Users</li>
+    </ol>
+</nav>
 
 {% else %}
 <div>
     <p>
-        <a href="/">Register</a> |
-        <a href="/">Log in</a>
+        <a href="/" class="btn btn-primary">REGISTER</a> |
+        <a href="/" class="btn btn-primary">LOG IN</a>
     </p>
 </div>
 {% endif %}
+
+<ul class="list-group list-group-flush">
+    {% for user in users %}
+    <li class="list-group-item">
+        <a href="/users/{{ user.id }}">{{ user.email }}</a>
+    </li>
+    {% endfor %}
+</ul>
 
 {% endblock %}
 
