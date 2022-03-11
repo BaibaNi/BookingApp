@@ -22,7 +22,10 @@ class RegistrationFormValidator
             foreach ($rules as $rule){
                 [$name, $attribute] = explode(':', $rule);
                 $ruleName = 'validate' . ucfirst($name); // dynamically calls a private function (for example) 'validateRequired()' / validateMin:3
-                //todo check if method exists --> not: invalid validation rule
+
+                if(!$ruleName){
+                    $_SESSION['status'] = 'Invalid validation rule'; //check if method exists --> not: invalid validation rule
+                }
                 $this->{$ruleName}($key, $attribute);
             }
 
@@ -37,7 +40,7 @@ class RegistrationFormValidator
     private function validateRequired(string $key): void
     {
         if(empty(trim($this->data[$key]))){
-            $this->errors[$key][] = "{$key} field is required";
+            $this->errors[$key][] = "{$key} field is required.";
         }
     }
 
@@ -45,6 +48,13 @@ class RegistrationFormValidator
     {
         if(strlen($this->data[$key]) < $attribute){
             $this->errors[$key][] = "{$key} must be at least {$attribute} characters long.";
+        }
+    }
+
+    private function validateEmail(string $key, string $character): void
+    {
+        if(!str_contains($this->data[$key], $character)){
+            $this->errors[$key][] = "Invalid email.";
         }
     }
 

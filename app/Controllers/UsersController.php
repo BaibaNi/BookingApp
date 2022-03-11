@@ -180,9 +180,9 @@ class UsersController extends Database
             'name' => ['required', 'Min:3'],
             'surname' => ['required', 'Min:3'],
             'birthday' => ['required'],
-            'email_reg' => ['required', 'Min:3'],
-            'password_reg' => ['required', 'Min:3'],
-            'password_repeat' => ['required', 'Min:3']
+            'email_reg' => ['required', 'Min:3', 'Email:@', 'Email:.'],
+            'password_reg' => ['required', 'Min:8'],
+            'password_repeat' => ['required', 'Min:8']
         ]);
         try {
             $validator->passes();
@@ -230,7 +230,7 @@ class UsersController extends Database
         $userPassword = $_POST['password'];
 
         $validator = new LoginFormValidator($_POST, [
-            'email' => ['required', 'Min:3'],
+            'email' => ['required', 'Min:3', 'Email:@', 'Email:.'],
             'password' => ['required']
         ]);
 
