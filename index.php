@@ -8,7 +8,7 @@ use App\Controllers\ApartmentsController;
 use App\Controllers\ReservationsController;
 use App\Controllers\UsersController;
 use App\Validation\Errors;
-use App\Validation\Status;
+//use App\Validation\Status;
 use App\View;
 use App\Redirect;
 use Twig\Extra\CssInliner\CssInlinerExtension;
@@ -84,9 +84,9 @@ switch ($routeInfo[0]) {
         $twig->addFunction(
             new TwigFunction('errors', function(string $url) { return Errors::getAll(); })
         );
-        $twig->addFunction(
-            new TwigFunction('status', function(string $url) { return Status::getAll(); })
-        );
+//        $twig->addFunction(
+//            new TwigFunction('status', function(string $url) { return Status::getAll(); })
+//        );
 
 
         if($response instanceof View)
