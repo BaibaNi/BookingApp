@@ -70,9 +70,21 @@ body{
     margin: 4% 0 4% 4%;
 }
 
-.alert{
+.alert_ok{
     background-color: darkseagreen;
     border-color: darkseagreen;
     color: whitesmoke;
     text-align: center;
+    padding: 2% 2% 2% 2%;
+    border-radius: 4px;
+
+}
+
+.alert_err{
+    background-color: crimson;
+    border-color: crimson;
+    color: whitesmoke;
+    text-align: center;
+    padding: 2% 2% 2% 2%;
+    border-radius: 4px;
 }

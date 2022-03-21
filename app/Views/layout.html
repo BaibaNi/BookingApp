@@ -22,9 +22,13 @@
 
         <br>
 
-        {% if session.status %}
-            <div class="alert" role="alert">
-                {{ session.status }}
+        {% if session.status_ok %}
+            <div class="alert_ok" role="alert">
+                {{ session.status_ok }}
+            </div>
+        {% elseif session.status_err %}
+            <div class="alert_err" role="alert">
+                {{ session.status_err }}
             </div>
         {% endif %}
 

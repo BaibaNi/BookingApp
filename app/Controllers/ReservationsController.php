@@ -4,7 +4,6 @@ namespace App\Controllers;
 use App\Database;
 use App\Exceptions\BookingValidationException;
 use App\Models\ApartmentReservation;
-use App\Models\User;
 use App\Redirect;
 use App\Validation\BookingFormValidator;
 use App\View;
@@ -105,15 +104,15 @@ class ReservationsController extends Database
                         ]);
 
                 } else{
-                    $_SESSION['status'] = 'Selected period is not available!';
+                    $_SESSION['status_err'] = 'Selected period is not available!';
                     throw new BookingValidationException('Selected period is not available');
                 }
 
             } else {
-                $_SESSION['status'] = 'Selected period is not available!';
+                $_SESSION['status_err'] = 'Selected period is not available!';
                 throw new BookingValidationException('Selected period is not available');
             }
-            $_SESSION['status'] = 'Registration is successful!';
+            $_SESSION['status_ok'] = 'Registration is successful!';
             return new Redirect('/apartments/' . $vars['id']);
 
         } catch(BookingValidationException $exception){
@@ -123,17 +122,5 @@ class ReservationsController extends Database
         }
 
     }
-
-
-//    public function cancel(array $vars): Redirect
-//    {
-//        var_dump($vars['id'],$vars['reservationid']);die;
-//        Database::connection()
-//            ->delete('apartment_reservations', [
-//                'id' => (int)$vars['reservationid']
-//            ]);
-//
-//        return new Redirect('/users/' . $vars['id']);
-//    }
 
 }

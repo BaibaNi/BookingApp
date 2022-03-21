@@ -62,11 +62,11 @@ $uri = rawurldecode($uri);
 $routeInfo = $dispatcher->dispatch($httpMethod, $uri);
 switch ($routeInfo[0]) {
     case FastRoute\Dispatcher::NOT_FOUND:
-        var_dump('404 Not Found');
+        //var_dump('404 Not Found');
         break;
     case FastRoute\Dispatcher::METHOD_NOT_ALLOWED:
         $allowedMethods = $routeInfo[1];
-        var_dump('405 Method Not Allowed');
+       //var_dump('405 Method Not Allowed');
         break;
     case FastRoute\Dispatcher::FOUND:
         $controller = $routeInfo[1][0];
@@ -107,6 +107,10 @@ if(isset($_SESSION['inputs'])){
     unset($_SESSION['inputs']);
 }
 
-if(isset($_SESSION['status'])){
-    unset($_SESSION['status']);
+if(isset($_SESSION['status_ok'])){
+    unset($_SESSION['status_ok']);
+}
+
+if(isset($_SESSION['status_err'])){
+    unset($_SESSION['status_err']);
 }

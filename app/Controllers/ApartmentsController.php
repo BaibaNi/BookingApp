@@ -20,7 +20,7 @@ use App\Validation\ReviewFormValidator;
 use App\View;
 use Carbon\Carbon;
 use Carbon\CarbonPeriod;
-use TheCodeMill\FlashMessage\Message;
+
 
 class ApartmentsController extends Database
 {
@@ -129,7 +129,6 @@ class ApartmentsController extends Database
         }
 
         $reservationDates = [];
-//        $totalPrice = 0;
         foreach ($reservations as $record){
             [$startDate, $endDate] = $record;
             $period = CarbonPeriod::create($startDate, $endDate);
@@ -195,7 +194,7 @@ class ApartmentsController extends Database
                     'available_until' => $availableUntil
                 ]);
 
-            $_SESSION['status'] = 'Your apartment is listed!';
+            $_SESSION['status_ok'] = 'Your apartment is listed!';
             return new Redirect('/users/' . $_SESSION['userid']);
 
         } catch(ApartmentValidationException $exception){
@@ -209,32 +208,34 @@ class ApartmentsController extends Database
     public function delete(array $vars): Redirect
     {
 
-//        try{
-//
-//            $reservedApartmentsQuery = Database::connection()
-//                ->prepare('SELECT * from apartment_reservations
-//    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.apartment_id = ?');
-//            $reservedApartmentsQuery->bindValue(1, (int) $vars['id']);
-//            $reservationsInfo = $reservedApartmentsQuery
-//                ->executeQuery()
-//                ->fetchAllAssociative();
-//
-//            if (!empty($reservationsInfo)) {
-//                throw new ResourceNotFoundException("Apartment has reservations.");
-//            } else{
+        try{
+
+            $reservedApartmentsQuery = Database::connection()
+                ->prepare('SELECT * from apartment_reservations
+    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.apartment_id = ?');
+            $reservedApartmentsQuery->bindValue(1, (int) $vars['id']);
+            $reservationsInfo = $reservedApartmentsQuery
+                ->executeQuery()
+                ->fetchAllAssociative();
+
+            if (!empty($reservationsInfo)) {
+                $_SESSION['status_err'] = 'Cannot delete! Your listed apartment has reservations.';
+                throw new ResourceNotFoundException("Apartment has reservations.");
+            } else{
                 Database::connection()
                     ->delete('apartments', [
                         'id' => (int)$vars['id'],
                     ]);
-//            }
 
-            $_SESSION['status'] = 'Your listed apartment is deleted.';
+                $_SESSION['status_ok'] = 'Your listed apartment is deleted.';
+            }
             return new Redirect('/users/' . $_SESSION['userid']);
 
-//        } catch(ResourceNotFoundException $exception){
-////            $message = $exception->getMessage();
+        } catch(ResourceNotFoundException $exception){
+            $_SESSION['status_err'] = 'Cannot delete! Your listed apartment has active reservations.';
+            return new Redirect('/users/' . $_SESSION['userid']);
 //            return new Redirect('404');
-//        }
+        }
 
     }
 
@@ -250,6 +251,7 @@ class ApartmentsController extends Database
                 ->fetchAssociative();
 
             if (!$list) {
+                $_SESSION['status_err'] = 'Cannot edit! Apartment is not found.';
                 throw new ResourceNotFoundException("Apartment with id {$vars['id']} is not found.");
             }
 
@@ -279,7 +281,7 @@ class ApartmentsController extends Database
                 'inputs' => $_SESSION['inputs'] ?? []
             ]);
         } catch (ResourceNotFoundException $exception){
-            $message = $exception->getMessage();
+            $_SESSION['status_err'] = 'Cannot edit! Apartment is not found.';
             return new View('404');
         }
     }
@@ -308,7 +310,7 @@ class ApartmentsController extends Database
                     ]
                 );
 
-            $_SESSION['status'] = 'Changes saved.';
+            $_SESSION['status_ok'] = 'Changes saved.';
             return new Redirect('/apartments/' . (int) $vars['id']);
         } catch (EditValidationException $exception){
             $_SESSION['errors'] = $validator->getErrors();
@@ -337,8 +339,9 @@ class ApartmentsController extends Database
                     'rating' => $_POST['rating']
                 ]);
 
-            $_SESSION['status'] = 'Thank you! Your feedback is registered!';
+            $_SESSION['status_ok'] = 'Thank you! Your feedback is registered!';
             return new Redirect("/apartments/{$vars['id']}");
+
         } catch(ReviewValidationException $exception){
             $_SESSION['errors'] = $validator->getErrors();
             $_SESSION['inputs'] = $_POST;

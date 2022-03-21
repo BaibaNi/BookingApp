@@ -211,7 +211,7 @@ class UsersController extends Database
                         'birthday' => $_POST['birthday'],
                     ]);
 
-                $_SESSION['status'] = 'Your account has been registered. Please, log-in for further actions!';
+                $_SESSION['status_ok'] = 'Your account has been registered. Please, log-in for further actions!';
                 return new Redirect('/');
             }
         } catch(RegistrationValidationException $exception){
@@ -245,7 +245,7 @@ class UsersController extends Database
                 ->fetchAssociative();
 
             if(count($user) === 0){
-                $_SESSION['status'] = 'User not found!';
+                $_SESSION['status_err'] = 'User not found!';
                 throw new LoginValidationException('User not found!');
             } else{
                 $hashedPassword = $user['password'];
@@ -265,7 +265,7 @@ class UsersController extends Database
                     return new Redirect('/');
 
                 } else{
-                    $_SESSION['status'] = 'Email or password is not correct!';
+                    $_SESSION['status_err'] = 'Email or password is not correct!';
                     throw new LoginValidationException('Email or password is not correct!');
                 }
             }
