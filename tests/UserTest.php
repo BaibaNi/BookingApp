@@ -24,7 +24,7 @@ class UserTest extends TestCase
     public function testGetCreatedAt(): void
     {
         $user = new User('test@email.com', 'TestPassword', (new DateTime('now'))->format('d-m-Y'), 2);
-        $this->assertSame('22-03-2022', $user->getCreatedAt());
+        $this->assertSame((new DateTime('now'))->format('d-m-Y'), $user->getCreatedAt());
     }
 
     public function testGetId(): void

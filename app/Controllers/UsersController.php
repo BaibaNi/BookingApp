@@ -4,11 +4,15 @@ namespace App\Controllers;
 use App\Database;
 use App\Exceptions\LoginValidationException;
 use App\Exceptions\RegistrationValidationException;
-use App\Models\Apartment;
-use App\Models\ApartmentReservation;
-use App\Models\User;
-use App\Models\UserProfile;
 use App\Redirect;
+use App\Services\User\Index\IndexUserService;
+use App\Services\User\Login\LoginUserEmailRequest;
+use App\Services\User\Login\LoginUserIdRequest;
+use App\Services\User\Login\LoginUserService;
+use App\Services\User\Register\RegisterUserRequest;
+use App\Services\User\Register\RegisterUserService;
+use App\Services\User\Show\ShowUserRequest;
+use App\Services\User\Show\ShowUserService;
 use App\Validation\Errors;
 use App\Validation\LoginFormValidator;
 use App\Validation\RegistrationFormValidator;
@@ -29,20 +33,9 @@ class UsersController extends Database
 
     public function index(): View
     {
-        $usersList = Database::connection()
-            ->prepare('SELECT * FROM users')
-            ->executeQuery()
-            ->fetchAllAssociative();
 
-        $users = [];
-        foreach ($usersList as $user){
-            $users[] = new User(
-                $user['email'],
-                $user['password'],
-                $user['created_at'],
-                $user['id']
-            );
-        }
+        $service = new IndexUserService();
+        $users = $service->execute();
 
         return new View('Users/index', [
             'users' => $users
@@ -52,124 +45,16 @@ class UsersController extends Database
 
     public function show(array $vars): View
     {
-//---User's profile
-        $usersQuery = Database::connection()
-            ->prepare('SELECT * FROM users where id = ?');
-        $usersQuery->bindValue(1, $vars['id']);
-        $userList = $usersQuery
-            ->executeQuery()
-            ->fetchAssociative();
+        $userId = (int) $vars['id'];
 
-        $userProfileQuery = Database::connection()
-            ->prepare('SELECT * FROM user_profiles where user_id = ?');
-        $userProfileQuery->bindValue(1, $vars['id']);
-        $userProfile = $userProfileQuery
-            ->executeQuery()
-            ->fetchAssociative();
-
-
-        $user = new UserProfile(
-            $userProfile['name'],
-            $userProfile['surname'],
-            $userProfile['birthday'],
-            $userList['email'],
-            $userList['password'],
-            $userList['created_at'],
-            $userList['id']
-        );
-
-//---created apartments for booking
-        $createdApartmentQuery = Database::connection()
-            ->prepare('SELECT * FROM apartments where user_id = ? order by available_from desc ');
-        $createdApartmentQuery->bindValue(1, $_SESSION['userid']);
-        $apartmentInfo = $createdApartmentQuery
-            ->executeQuery()
-            ->fetchAllAssociative();
-
-        $createdApartments = [];
-        foreach ($apartmentInfo as $apartment){
-
-            $apartmentAvgRatingQuery = Database::connection()
-                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
-            $apartmentAvgRatingQuery->bindValue(1, $apartment['id']);
-            $apartmentAvgRating = $apartmentAvgRatingQuery
-                ->executeQuery()
-                ->fetchAssociative();
-
-            $createdApartments[] = new Apartment(
-                 $apartment['title'],
-                 $apartment['address'],
-                 $apartment['description'],
-                 $apartment['price'],
-                 $apartment['available_from'],
-                 $apartment['available_until'],
-                 $apartment['id'],
-                 $apartment['user_id'],
-                (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
-            );
-        }
-
-//---reserved apartments
-        $reservedApartmentsQuery = Database::connection()
-            ->prepare('SELECT * from apartment_reservations
-    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.user_id = ? 
-    order by reserved_from asc ');
-        $reservedApartmentsQuery->bindValue(1, $_SESSION['userid']);
-        $reservedApartmentsInfo = $reservedApartmentsQuery
-            ->executeQuery()
-            ->fetchAllAssociative();
-
-        $reservedApartments = [];
-        foreach ($reservedApartmentsInfo as $reservation){
-
-            $apartmentAvgRatingQuery = Database::connection()
-                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
-            $apartmentAvgRatingQuery->bindValue(1, $reservation['id']);
-            $apartmentAvgRating = $apartmentAvgRatingQuery
-                ->executeQuery()
-                ->fetchAssociative();
-
-            $reservedApartments[] = new Apartment(
-                $reservation['title'],
-                $reservation['address'],
-                $reservation['description'],
-                $reservation['price'],
-                $reservation['reserved_from'],
-                $reservation['reserved_until'],
-                $reservation['id'],
-                $reservation['user_id'],
-                (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
-            );
-        }
-
-
-        $reservationsQuery = Database::connection()
-            ->prepare('SELECT * from apartment_reservations 
-    join users on (apartment_reservations.user_id = users.id) and apartment_reservations.user_id = ?');
-        $reservationsQuery->bindValue(1, $vars['id']);
-        $reservationsInfo = $reservationsQuery
-            ->executeQuery()
-            ->fetchAllAssociative();
-
-        $reservations =[];
-        foreach ($reservationsInfo as $reservation) {
-
-            $reservations[] = new ApartmentReservation(
-                $reservation['reserved_from'],
-                $reservation['reserved_until'],
-                $reservation['email'],
-                $reservation['id'],
-                $reservation['user_id'],
-                $reservation['apartment_id']
-            );
-        }
-
+        $service = new ShowUserService();
+        $response = $service->execute(new ShowUserRequest($userId));
 
         return new View('Users/show', [
-            'user' => $user,
-            'createdApartments' => $createdApartments,
-            'reservedApartments' => $reservedApartments,
-            'reservations' => $reservations
+            'user' => $response->getUserProfile(),
+            'createdApartments' => $response->getUserListedApartments(),
+            'reservedApartments' => $response->getReservedApartments(),
+            'reservations' => $response->getReservations()
         ]);
     }
 
@@ -191,25 +76,14 @@ class UsersController extends Database
                 throw new RegistrationValidationException('Passwords do not match.');
             } else {
 
-                Database::connection()
-                    ->insert('users', [
-                        'email' => $_POST['email_reg'],
-                        'password' => password_hash($_POST['password_reg'], PASSWORD_BCRYPT),
-                    ]);
-
-                $res = Database::connection()
-                    ->prepare('SELECT * FROM users WHERE id = LAST_INSERT_ID()')
-                    ->executeQuery()
-                    ->fetchAssociative();
-
-
-                Database::connection()
-                    ->insert('user_profiles', [
-                        'user_id' => (int)$res['id'],
-                        'name' => $_POST['name'],
-                        'surname' => $_POST['surname'],
-                        'birthday' => $_POST['birthday'],
-                    ]);
+                $service = new RegisterUserService();
+                $service->execute(new RegisterUserRequest(
+                    $_POST['email_reg'],
+                    $_POST['password_reg'],
+                    $_POST['name'],
+                    $_POST['surname'],
+                    $_POST['birthday']
+                ));
 
                 $_SESSION['status_ok'] = 'Your account has been registered. Please, log-in for further actions!';
                 return new Redirect('/');
@@ -237,12 +111,8 @@ class UsersController extends Database
         try{
             $validator->passes();
 
-            $stmt = Database::connection()
-                ->prepare('SELECT * FROM users WHERE email = ?');
-            $stmt->bindValue(1, $userEmail);
-            $user = $stmt
-                ->executeQuery()
-                ->fetchAssociative();
+            $service = new LoginUserService();
+            $user = $service->getUser(new LoginUserEmailRequest($userEmail));
 
             if(count($user) === 0){
                 $_SESSION['status_err'] = 'User not found!';
@@ -251,12 +121,7 @@ class UsersController extends Database
                 $hashedPassword = $user['password'];
                 if(password_verify($userPassword, $hashedPassword) ){
 
-                    $stmt = Database::connection()
-                        ->prepare('SELECT * FROM user_profiles WHERE user_id = ?');
-                    $stmt->bindValue(1, $user['id']);
-                    $userLogged = $stmt
-                        ->executeQuery()
-                        ->fetchAssociative();
+                    $userLogged = $service->execute(new LoginUserIdRequest($user['id']));
 
                     session_start();
                     $_SESSION['userid'] = $user['id'];

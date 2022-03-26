@@ -3,147 +3,56 @@ namespace App\Controllers;
 
 use App\Database;
 use App\Exceptions\ApartmentValidationException;
-use App\Exceptions\BookingValidationException;
 use App\Exceptions\EditValidationException;
 use App\Exceptions\ResourceNotFoundException;
 use App\Exceptions\ReviewValidationException;
-use App\Models\Apartment;
-use App\Models\ApartmentAverageRating;
-use App\Models\ApartmentReservation;
-use App\Models\ApartmentReview;
 use App\Redirect;
+use App\Services\Apartment\Create\CreateApartmentRequest;
+use App\Services\Apartment\Create\CreateApartmentService;
+use App\Services\Apartment\Delete\DeleteApartmentRequest;
+use App\Services\Apartment\Delete\DeleteApartmentService;
+use App\Services\Apartment\Edit\EditApartmentRequest;
+use App\Services\Apartment\Edit\EditApartmentService;
+use App\Services\Apartment\EditForm\EditFormApartmentRequest;
+use App\Services\Apartment\EditForm\EditFormApartmentService;
+use App\Services\Apartment\Index\IndexApartmentService;
+use App\Services\Apartment\Review\ReviewApartmentRequest;
+use App\Services\Apartment\Review\ReviewApartmentService;
+use App\Services\Apartment\Show\ShowApartmentRequest;
+use App\Services\Apartment\Show\ShowApartmentService;
 use App\Validation\ApartmentFormValidator;
-use App\Validation\BookingFormValidator;
 use App\Validation\EditFormValidator;
 use App\Validation\Errors;
 use App\Validation\ReviewFormValidator;
 use App\View;
 use Carbon\Carbon;
-use Carbon\CarbonPeriod;
 
 
 class ApartmentsController extends Database
 {
     public function index(): View
     {
-        $apartmentList = Database::connection()
-            ->prepare('SELECT * FROM apartments order by available_from asc')
-            ->executeQuery()
-            ->fetchAllAssociative();
-
-
-        $apartments = [];
-        foreach ($apartmentList as $apartment){
-
-            $apartmentAvgRatingQuery = Database::connection()
-                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
-            $apartmentAvgRatingQuery->bindValue(1, $apartment['id']);
-            $apartmentAvgRating = $apartmentAvgRatingQuery
-                ->executeQuery()
-                ->fetchAssociative();
-
-            $apartments[] = new Apartment(
-                $apartment['title'],
-                $apartment['address'],
-                $apartment['description'],
-                $apartment['price'],
-                $apartment['available_from'],
-                $apartment['available_until'],
-                $apartment['id'],
-                $apartment['user_id'],
-                (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
-
-            );
-        }
+        $service = new IndexApartmentService();
+        $response = $service->execute();
 
         return new View('Apartments/index', [
-            'apartments' => $apartments,
+            'apartments' => $response->getApartments(),
             ]);
     }
 
 
     public function show(array $vars): View
     {
+        $apartmentId = (int) $vars['id'];
 
-        $apartmentQuery = Database::connection()
-            ->prepare('SELECT * FROM apartments where id = ?');
-        $apartmentQuery->bindValue(1, $vars['id']);
-        $apartmentInfo = $apartmentQuery
-            ->executeQuery()
-            ->fetchAssociative();
-
-        $apartmentAvgRatingQuery = Database::connection()
-            ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
-        $apartmentAvgRatingQuery->bindValue(1, $vars['id']);
-        $apartmentAvgRating = $apartmentAvgRatingQuery
-            ->executeQuery()
-            ->fetchAssociative();
-
-        $apartment = new Apartment(
-            $apartmentInfo['title'],
-            $apartmentInfo['address'],
-            $apartmentInfo['description'],
-            $apartmentInfo['price'],
-            date('m-d-Y', strtotime($apartmentInfo['available_from'])),
-            date('m-d-Y', strtotime($apartmentInfo['available_until'])),
-            $apartmentInfo['id'],
-            $apartmentInfo['user_id'],
-            (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
-        );
-
-
-
-        $reviewsQuery = Database::connection()
-            ->prepare('SELECT * from apartment_reviews join user_profiles 
-    on (apartment_reviews.user_id = user_profiles.user_id) and apartment_reviews.apartment_id = ? order by created_at desc');
-        $reviewsQuery->bindValue(1, (int) $vars['id']);
-        $reviewsList = $reviewsQuery
-            ->executeQuery()
-            ->fetchAllAssociative();
-
-        $reviews = [];
-        foreach($reviewsList as $review){
-            $reviews[] = new ApartmentReview(
-                $review['name'],
-                $review['surname'],
-                $review['review'],
-                $review['rating'],
-                $review['created_at'],
-                $review['id'],
-                $review['apartment_id']
-            );
-        }
-
-
-        $reservedApartmentsQuery = Database::connection()
-            ->prepare('SELECT * from apartment_reservations
-    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.apartment_id = ?');
-        $reservedApartmentsQuery->bindValue(1, (int) $vars['id']);
-        $reservationsInfo = $reservedApartmentsQuery
-            ->executeQuery()
-            ->fetchAllAssociative();
-
-        $reservations = [];
-        foreach ($reservationsInfo as $reservation){
-            $reservations[] = [$reservation['reserved_from'], $reservation['reserved_until']];
-        }
-
-        $reservationDates = [];
-        foreach ($reservations as $record){
-            [$startDate, $endDate] = $record;
-            $period = CarbonPeriod::create($startDate, $endDate);
-            foreach ($period as $date){
-                $reservationDates[] = $date->format('m/d/Y');
-            }
-        }
-
-        $totalPrice = count($reservationDates) * $apartmentInfo['price'];
+        $service = new ShowApartmentService();
+        $response = $service->execute(new ShowApartmentRequest($apartmentId));
 
         return new View('Apartments/show', [
-            'apartment' => $apartment,
-            'reviews' => $reviews,
-            'reservationDates' => $reservationDates,
-            'totalPrice' => $totalPrice,
+            'apartment' => $response->getApartment(),
+            'reviews' => $response->getReviews(),
+            'reservationDates' => $response->getReservationDates(),
+            'totalPrice' => $response->getTotalPrice(),
             'errors' => Errors::getAll(),
             'inputs' => $_SESSION['inputs'] ?? []
         ]);
@@ -182,17 +91,17 @@ class ApartmentsController extends Database
                 $availableUntil = $_POST['available_until'];
             }
 
-
-            Database::connection()
-                ->insert('apartments', [
-                    'user_id' => $_SESSION['userid'],
-                    'title' => $_POST['title'],
-                    'address' => $_POST['address'],
-                    'description' => $_POST['description'],
-                    'price' => $_POST['price'],
-                    'available_from' => $availableFrom,
-                    'available_until' => $availableUntil
-                ]);
+            $service = new CreateApartmentService();
+            $service->execute(new CreateApartmentRequest(
+                $_SESSION['userid'],
+                $_POST['title'],
+                $_POST['address'],
+                $_POST['description'],
+                $_POST['price'],
+                $availableFrom,
+                $availableUntil
+                )
+            );
 
             $_SESSION['status_ok'] = 'Your apartment is listed!';
             return new Redirect('/users/' . $_SESSION['userid']);
@@ -208,24 +117,18 @@ class ApartmentsController extends Database
     public function delete(array $vars): Redirect
     {
 
+        $apartmentID = (int) $vars['id'];
         try{
 
-            $reservedApartmentsQuery = Database::connection()
-                ->prepare('SELECT * from apartment_reservations
-    join apartments on (apartment_reservations.apartment_id = apartments.id) and apartment_reservations.apartment_id = ?');
-            $reservedApartmentsQuery->bindValue(1, (int) $vars['id']);
-            $reservationsInfo = $reservedApartmentsQuery
-                ->executeQuery()
-                ->fetchAllAssociative();
+            $service = new DeleteApartmentService();
+            $reservationsInfo = $service->check(new DeleteApartmentRequest($apartmentID));
 
             if (!empty($reservationsInfo)) {
                 $_SESSION['status_err'] = 'Cannot delete! Your listed apartment has reservations.';
                 throw new ResourceNotFoundException("Apartment has reservations.");
             } else{
-                Database::connection()
-                    ->delete('apartments', [
-                        'id' => (int)$vars['id'],
-                    ]);
+
+                $service->execute(new DeleteApartmentRequest($apartmentID));
 
                 $_SESSION['status_ok'] = 'Your listed apartment is deleted.';
             }
@@ -234,7 +137,6 @@ class ApartmentsController extends Database
         } catch(ResourceNotFoundException $exception){
             $_SESSION['status_err'] = 'Cannot delete! Your listed apartment has active reservations.';
             return new Redirect('/users/' . $_SESSION['userid']);
-//            return new Redirect('404');
         }
 
     }
@@ -242,53 +144,23 @@ class ApartmentsController extends Database
 
     public function editForm(array $vars): View
     {
-        try {
-            $stmt = Database::connection()
-                ->prepare('SELECT * FROM apartments where id = ?');
-            $stmt->bindValue(1, $vars['id']);
-            $list = $stmt
-                ->executeQuery()
-                ->fetchAssociative();
 
-            if (!$list) {
-                $_SESSION['status_err'] = 'Cannot edit! Apartment is not found.';
-                throw new ResourceNotFoundException("Apartment with id {$vars['id']} is not found.");
-            }
+        $apartmentId = (int) $vars['id'];
 
-            $apartmentAvgRatingQuery = Database::connection()
-                ->prepare('SELECT AVG(rating) from apartment_reviews where apartment_id = ?');
-            $apartmentAvgRatingQuery->bindValue(1, $vars['id']);
-            $apartmentAvgRating = $apartmentAvgRatingQuery
-                ->executeQuery()
-                ->fetchAssociative();
+        $service = new EditFormApartmentService();
+        $apartment = $service->execute(new EditFormApartmentRequest($apartmentId));
 
-
-            $apartment = new Apartment(
-                $list['title'],
-                $list['address'],
-                $list['description'],
-                $list['price'],
-                $list['available_from'],
-                $list['available_until'],
-                $list['id'],
-                $list['user_id'],
-                (float) number_format($apartmentAvgRating['AVG(rating)'], 2)
-            );
-
-            return new View('Apartments/edit', [
-                'apartment' => $apartment,
-                'errors' => Errors::getAll(),
-                'inputs' => $_SESSION['inputs'] ?? []
-            ]);
-        } catch (ResourceNotFoundException $exception){
-            $_SESSION['status_err'] = 'Cannot edit! Apartment is not found.';
-            return new View('404');
-        }
+        return new View('Apartments/edit', [
+            'apartment' => $apartment,
+            'errors' => Errors::getAll(),
+            'inputs' => $_SESSION['inputs'] ?? []
+        ]);
     }
 
 
     public function edit(array $vars): Redirect
     {
+        $apartmentID = (int) $vars['id'];
 
         $validator = new EditFormValidator($_POST, [
             'title' => ['required', 'min:3'],
@@ -299,16 +171,14 @@ class ApartmentsController extends Database
         try{
             $validator->passes();
 
-            Database::connection()
-                ->update('apartments', [
-                    'title' => $_POST['title'],
-                    'address' => $_POST['address'],
-                    'description' => $_POST['description'],
-                    'price' => $_POST['price']
-                ], [
-                        'id' => (int)$vars['id'],
-                    ]
-                );
+            $service = new EditApartmentService();
+            $service->execute(new EditApartmentRequest(
+                $apartmentID,
+                $_POST['title'],
+                $_POST['address'],
+                $_POST['description'],
+                $_POST['price'],
+            ));
 
             $_SESSION['status_ok'] = 'Changes saved.';
             return new Redirect('/apartments/' . (int) $vars['id']);
@@ -323,6 +193,9 @@ class ApartmentsController extends Database
 
     public function review(array $vars): Redirect
     {
+
+        $apartmentId = (int) $vars['id'];
+
         $validator = new ReviewFormValidator($_POST, [
             'review' => ['required', 'Min:3'],
             'rating' => ['required']
@@ -330,14 +203,13 @@ class ApartmentsController extends Database
         try {
             $validator->passes();
 
-
-            Database::connection()
-                ->insert('apartment_reviews', [
-                    'apartment_id' => $vars['id'],
-                    'user_id' => $_SESSION['userid'],
-                    'review' => $_POST['review'],
-                    'rating' => $_POST['rating']
-                ]);
+            $service = new ReviewApartmentService();
+            $service->execute(new ReviewApartmentRequest(
+                $apartmentId,
+                $_SESSION['userid'],
+                $_POST['review'],
+                $_POST['rating']
+            ));
 
             $_SESSION['status_ok'] = 'Thank you! Your feedback is registered!';
             return new Redirect("/apartments/{$vars['id']}");
